@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -44,8 +48,29 @@ class _HomePageState extends State<HomePage> {
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
     position =  await Geolocator.getCurrentPosition();
+    getWeatherData();
     print("long: ${position!.longitude} lati${position!.latitude}");
   }
+
+  Map<String, dynamic> ?weatherMap;
+   Map<String, dynamic>? forecastMap;
+
+   getWeatherData()async{
+     var weather = await http.get(Uri.parse("https://api.openweathermap.org/data/2.5/weather?lat=${position!.latitude}&lon=${position!.longitude}&appid=85d48725d65c4de60fa682a3d0194b21"));
+     print("${weather.body}");
+     var forecast = await http.get(Uri.parse("https://api.openweathermap.org/data/2.5/forecast?lat=${position!.latitude}&lon=${position!.longitude}&appid=85d48725d65c4de60fa682a3d0194b21"));
+     print("${forecast.body}");
+
+     var weatherData = jsonDecode(weather.body);
+     var forecastData = jsonDecode(forecast.body);
+
+     setState(() {
+       weatherMap = Map<String, dynamic>.from(weatherData);
+       forecastMap = Map<String, dynamic>.from(forecastData);
+     });
+    // print("${weatherMap!["name"]}");
+
+   }
 
   Position ? position;
 
@@ -57,6 +82,21 @@ class _HomePageState extends State<HomePage> {
   }
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return weatherMap!=null? Scaffold(
+      appBar: AppBar(
+        title: Text("Weather and Forecast"),
+      ),
+      body: Container(
+        width: double.infinity,
+        child: Column(
+          children: [
+            Text("Location: ${weatherMap!["name"]}"),
+            //Text("Location: ${weatherMap!["name"]}"),
+
+          ],
+        ),
+      ),
+      ): Center(child: CircularProgressIndicator());
+
   }
 }
